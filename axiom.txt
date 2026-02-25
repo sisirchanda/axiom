@@ -1,0 +1,397 @@
+Here’s a detailed day-wise build plan for creating your Oracle Fusion Automation Framework, with the flexibility to extend it to other ERPs in the future. The plan assumes solo development, with a focus on creating a scalable, maintainable solution. Each day's tasks are aimed at breaking down the project into manageable steps, from setting up the base infrastructure to adding advanced features.
+
+Day 1–2: Setup and Core Infrastructure
+Goals:
+
+Set up the monorepo structure.
+
+Install core dependencies.
+
+Implement the basic config system.
+
+Tasks:
+
+Initialize the Monorepo:
+
+Set up the root project with npm init -y.
+
+Configure npm workspaces in package.json.
+
+Create folders for apps/, packages/, and data/.
+
+Install Dependencies:
+
+Install Playwright for browser automation, ExcelJS for reading configuration files, and dotenv for environment management.
+
+Run npx playwright install to install the required browsers.
+
+Create Core Package (@core):
+
+Implement a browser automation module that launches and closes the browser.
+
+Set up logging functionality (using winston or simple console logs).
+
+Implement retry logic for handling page load errors, timeouts, etc.
+
+Create the .env Configuration File:
+
+Store general settings like ERP URL, credentials, and environment settings.
+
+Expected Outcome:
+
+A functioning monorepo structure with a working core package.
+
+The automation framework can launch and close browsers via Playwright.
+
+Revised Day-3 — Backend Foundation + Authentication
+Day-3 Goals
+
+Create backend API project
+
+Setup Express server
+
+Setup authentication model
+
+Prepare Google OAuth integration
+
+Prepare file upload structure
+
+Git commit
+
+Step 1 — Create Backend App
+
+From root:
+
+mkdir apps/api-server
+cd apps/api-server
+npm init -y
+mkdir src
+mkdir src/routes
+mkdir src/controllers
+mkdir src/middleware
+mkdir src/services
+Step 2 — Install Backend Dependencies
+npm install express cors dotenv bcrypt jsonwebtoken multer
+npm install mongoose
+npm install passport passport-google-oauth20
+
+Purpose:
+
+express → API server
+
+bcrypt → password hashing
+
+jsonwebtoken → session token
+
+multer → file upload
+
+passport → OAuth
+
+Step 3 — Create Server Entry File
+apps/api-server/src/index.js
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/health", (req, res) => {
+    res.json({ status: "OK" });
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`API running on port ${PORT}`);
+});
+
+Run:
+
+node src/index.js
+Step 4 — Create .env for Backend
+apps/api-server/.env
+PORT=5000
+JWT_SECRET=erp_automation_secret
+GOOGLE_CLIENT_ID=xxxxx
+GOOGLE_CLIENT_SECRET=xxxxx
+Step 5 — Create User Model (Basic)
+src/models/User.js
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+    firstName: String,
+    lastName: String,
+    email: String,
+    password: String,
+    googleId: String
+});
+
+module.exports = mongoose.model("User", UserSchema);
+Step 6 — Create Upload Folder
+
+From root:
+
+mkdir uploads
+
+Later:
+
+uploads/
+   job-123/
+       config.xlsx
+Step 7 — Create Basic Auth Routes (Skeleton)
+src/routes/authRoutes.js
+const router = require('express').Router();
+
+router.post("/signup", (req,res)=>{
+   res.json({message:"signup placeholder"});
+});
+
+router.post("/login", (req,res)=>{
+   res.json({message:"login placeholder"});
+});
+
+module.exports = router;
+
+Attach route in index.js.
+
+Step 8 — Git Commit (End of Day-3)
+git add .
+git commit -m "Day 3: Backend API foundation with auth skeleton and upload structure"
+Revised Day-4 — File Upload + Automation Trigger Pipeline
+
+Now we connect backend → automation engine.
+
+Day-4 Goals
+
+File upload endpoint
+
+Job execution endpoint
+
+Connect backend with automation-engine
+
+Prepare job structure
+
+Git commit
+
+Step 1 — Create Multer Upload Middleware
+src/middleware/upload.js
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+
+module.exports = multer({ storage });
+Step 2 — Create Upload API
+src/routes/uploadRoutes.js
+const router = require('express').Router();
+const upload = require('../middleware/upload');
+
+router.post("/config", upload.single("file"), (req,res)=>{
+    res.json({
+        file: req.file.path
+    });
+});
+
+module.exports = router;
+Step 3 — Create Automation Trigger Route
+src/routes/automationRoutes.js
+const router = require('express').Router();
+
+router.post("/run", async (req,res)=>{
+
+    const { erp, filePath } = req.body;
+
+    console.log("Automation requested:", erp);
+
+    // Next step: call automation engine
+
+    res.json({
+        status: "JOB_STARTED"
+    });
+});
+
+module.exports = router;
+Step 4 — Create Automation Engine App (Move Existing Logic)
+
+Create:
+
+mkdir apps/automation-engine
+mkdir apps/automation-engine/src
+
+Move your current:
+
+Playwright core usage
+
+Excel config loader
+
+into:
+
+apps/automation-engine/src/runOracle.js
+
+Example:
+
+async function runOracle(configPath){
+   console.log("Running Oracle automation using:", configPath);
+}
+
+module.exports = runOracle;
+Step 5 — Backend Calls Automation Engine
+
+Inside automation route:
+
+const runOracle = require('../../../automation-engine/src/runOracle');
+Step 6 — Git Commit (End of Day-4)
+git add .
+git commit -m "Day 4: File upload and automation trigger pipeline created"
+Revised Plan for Subsequent Days
+
+Because architecture changed, the rest of the schedule shifts.
+
+Day-5 — Database Integration
+
+Add:
+
+MongoDB connection
+
+Store users
+
+Store automation jobs
+
+Collections:
+
+users
+jobs
+Day-6 — Complete Authentication
+
+Implement:
+
+Email/password login
+
+JWT session middleware
+
+Password hashing
+
+Day-7 — Google OAuth Integration
+
+Implement OAuth using
+Google
+
+User login options:
+
+Email/password
+
+Google
+
+Day-8 — Frontend Project Setup
+
+Create:
+
+npx create-next-app apps/web-frontend
+
+Frontend stack:
+
+Vercel Next.js
+
+Tailwind (optional)
+
+Day-9 — Frontend Authentication UI
+
+Pages:
+
+Signup
+
+Login
+
+Google Login
+
+Day-10 — ERP Selection UI
+
+Dropdown:
+
+Oracle Corporation Fusion
+
+SAP SE
+
+Microsoft Dynamics
+
+Fields:
+
+ERP URL
+
+Username
+
+Password
+
+Day-11 — File Upload UI
+
+Upload:
+
+config.xlsx
+
+Call:
+
+POST /upload/config
+Day-12 — Connect Frontend → Automation
+
+User clicks:
+
+Run Automation
+
+Frontend calls:
+
+POST /automation/run
+Day-13 to Day-15 — Oracle Automation Implementation
+
+Now resume original automation work:
+
+Oracle login
+
+Navigation
+
+Payment terms flow
+
+Final Execution Flow (After Changes)
+User Login
+   ↓
+Upload Config
+   ↓
+Select ERP
+   ↓
+Backend API
+   ↓
+Automation Engine
+   ↓
+Playwright
+   ↓
+ERP UI
+What Changed vs Original Plan
+Area	Old Plan	New Plan
+Execution	CLI	Web UI
+Config source	Local Excel	Uploaded Excel
+Auth	None	Email + Google
+Architecture	Script tool	Automation platform
+Recommended Next Step
+
+Before coding further, the most important design decision remaining is:
+
+How automation jobs will run
+
+Option A:
+
+Run directly inside API server (simple but not scalable)
+
+Option B (recommended):
+
+Job queue (BullMQ / Redis)
+
+If you want, I can design the production-grade job execution architecture (used in real ERP automation platforms).
