@@ -1,0 +1,1 @@
+console.log("Oracle Fusion Automation Starting...");
