@@ -10,8 +10,9 @@ const { buildHandlers } = require("./actionHandlers");
 
   const moduleName = process.env.AXIOM_MODULE;
   const submoduleName = process.env.AXIOM_SUBMODULE;
-
-  if (!moduleName || !submoduleName) throw new Error("AXIOM_MODULE and AXIOM_SUBMODULE are required");
+  
+  console.log("AXIOM_MODULE=", process.env.AXIOM_MODULE);
+  console.log("AXIOM_SUBMODULE=", process.env.AXIOM_SUBMODULE);
 
   const flowPath = getFlowPath(moduleName, submoduleName);
   if (!flowPath) throw new Error(`No flow registered for ${moduleName} / ${submoduleName}`);

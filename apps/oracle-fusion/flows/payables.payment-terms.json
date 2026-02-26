@@ -1,12 +1,9 @@
 {
   "id": "fusion.payables.paymentTerms.v1",
-  "erp": "oracle-fusion",
-  "module": "Payables",
-  "submodule": "Payment Terms",
-  "version": 1,
+
   "pre": [
     { "action": "fusion.login" },
-    { "action": "fusion.goToSetupAndMaintenance" },
+    { "action": "fusion.openSetupAndMaintenance" },
     { "action": "fusion.openTask", "params": { "taskName": "Manage Payment Terms" } },
     {
       "action": "fusion.loadExcelRows",
@@ -14,29 +11,28 @@
         "sheet": "PaymentTerms",
         "map": {
           "Action": "Action",
-          "TermName": "TermName",
-          "Description": "Description",
-          "DueDays": "DueDays"
+          "Term Name": "termName",
+          "Description": "description",
+          "Due Days": "dueDays"
         },
-        "required": ["TermName"]
+        "required": ["termName"]
       }
     }
   ],
-  "input": {
-    "type": "excel",
-    "sheet": "PaymentTerms",
-    "map": {
-      "Action": "Action",
-      "TermName": "TermName",
-      "Description": "Description",
-      "DueDays": "DueDays",
-      "DiscountPercent": "DiscountPercent",
-      "DiscountDays": "DiscountDays",
-      "EndDate": "EndDate",
-      "Enabled": "Enabled"
-    },
-    "required": ["TermName"]
+
+  "params": {
+    "ui": {
+      "createButton": { "type": "role", "role": "button", "nameRegex": "create|add|\\+" },
+      "saveButton": { "type": "role", "role": "button", "nameRegex": "save" },
+
+      "fields": [
+        { "key": "termName", "fill": { "type": "label", "labelRegex": "^name$|term name" } },
+        { "key": "description", "fill": { "type": "label", "labelRegex": "description" } },
+        { "key": "dueDays", "fill": { "type": "label", "labelRegex": "due.*days" } }
+      ]
+    }
   },
+
   "steps": [
     {
       "forEach": "rows",
@@ -44,10 +40,19 @@
         {
           "if": { "eq": ["{{row.Action}}", "CREATE"] },
           "then": [
-            { "action": "fusion.paymentTerms.create", "params": { "row": "{{row}}" } }
+            {
+              "action": "fusion.generic.createRecord",
+              "params": { "row": "{{row}}", "ui": "{{params.ui}}" }
+            }
           ],
           "else": [
-            { "action": "core.log", "params": { "level": "warn", "message": "Skipping row (Action not supported): {{row.Action}}" } }
+            {
+              "action": "core.log",
+              "params": {
+                "level": "warn",
+                "message": "Skipping row Action={{row.Action}} termName={{row.termName}}"
+              }
+            }
           ]
         }
       ]

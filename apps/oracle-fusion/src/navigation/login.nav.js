@@ -1,7 +1,7 @@
 require("dotenv").config();
 const KEEP_OPEN = process.env.AXIOM_KEEP_OPEN === "1";
 
-async function loginFusion(page, logger, { url, username, password }) {
+async function login(page, logger,  url, username, password ) {
   // Put your working login logic here (you already have it working)
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("domcontentloaded");

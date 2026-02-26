@@ -1,16 +1,24 @@
-const { loginFusion } = require("../../navigation/login.nav");
+require("dotenv").config();
+
+const { parseExcelSheet } = require("../../config/excel.generic");
+
+const { login } = require("../../navigation/login.nav");
 const { openSetupAndMaintenance } = require("../../navigation/setupMaintenance.nav");
 const { openTask } = require("../../navigation/task.nav");
-const { parseExcelSheet } = require("../../config/excel.generic");
+
+const URL = process.env.ERP_URL
+const USERNAME = process.env.ERP_USERNAME
+const PASSWORD = process.env.ERP_PASSWORD
 
 module.exports = {
   "fusion.login": async (ctx) => {
-    await loginFusion(ctx.page, ctx.logger, ctx.env);
+    //await login(ctx.page, ctx.logger, ctx.env);
+	ctx.logger.info(`ERP_URL=${URL} and USERNAME=${USERNAME}`);
+	await login(ctx.page, ctx.logger, URL, USERNAME, PASSWORD);
   },
 
   "fusion.openSetupAndMaintenance": async (ctx) => {
     await openSetupAndMaintenance(ctx.page, ctx.logger);
-    await ctx.page.screenshot({ path: "04_setup_and_maintenance.png", fullPage: true });
   },
 
   "fusion.openTask": async (ctx, { taskName }) => {
