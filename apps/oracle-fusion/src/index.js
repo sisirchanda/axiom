@@ -1,41 +1,35 @@
 require("dotenv").config();
+const core = require("../../../packages/core/src");
 
-const path = require("path");
-const core = require(path.join(__dirname, "..", "..", "..", "packages", "core", "src"));
-
-
-const { login } = require("./navigation/login.nav");
-const { openSetupAndMaintenance } = require("./navigation/setupMaintenance.nav");
-
-const KEEP_OPEN = process.env.AXIOM_KEEP_OPEN === "1";
+const { getFlowPath } = require("./flowRegistry");
+const { runFlowFromFile } = require("./flowRunner");
+const { buildHandlers } = require("./actionHandlers");
 
 (async () => {
   const logger = core.logger;
-  logger.info("Starting Oracle Fusion Automation");
+
+  const moduleName = process.env.AXIOM_MODULE;
+  const submoduleName = process.env.AXIOM_SUBMODULE;
+
+  if (!moduleName || !submoduleName) throw new Error("AXIOM_MODULE and AXIOM_SUBMODULE are required");
+
+  const flowPath = getFlowPath(moduleName, submoduleName);
+  if (!flowPath) throw new Error(`No flow registered for ${moduleName} / ${submoduleName}`);
 
   const { browser, page } = await core.launchBrowser({ headless: false });
 
   try {
-    await login(page, logger, {
-      url: process.env.ERP_URL,
-      username: process.env.ERP_USERNAME,
-      password: process.env.ERP_PASSWORD,
-    });
+    const ctx = { logger, page, env: process.env, rows: [] };
+    const handlers = buildHandlers();
 
-    logger.info("Navigating to Setup and Maintenance...");
-    await openSetupAndMaintenance(page, logger);
+    await runFlowFromFile(flowPath, ctx, handlers);
 
-    await page.waitForTimeout(4000);
-    await page.screenshot({ path: "04_setup_and_maintenance.png", fullPage: true });
-    logger.info(`Setup and Maintenance URL: ${page.url()}`);
+    logger.info("Flow completed successfully.");
   } catch (e) {
-    logger.error("Automation failed", e);
+    logger.error("Flow failed", e);
     await page.screenshot({ path: "99_error.png", fullPage: true }).catch(() => {});
+    process.exitCode = 1;
   } finally {
-    if (KEEP_OPEN) {
-      logger.info("AXIOM_KEEP_OPEN=1 → keeping browser open for debugging.");
-      await page.waitForTimeout(10 * 60 * 1000);
-    }
     await core.closeBrowser(browser);
     logger.info("Browser closed");
   }

@@ -54,19 +54,4 @@ async function openSetupAndMaintenance(pageInstance, logger) {
     }
 }
 
-async function openTaskBySearch(page, taskName) {
-  // Find search input
-  const input = page.locator('input[type="text"]').first();
-
-  await input.fill(taskName);
-  await page.keyboard.press("Enter");
-
-  await page.waitForTimeout(3000);
-
-  const link = page.getByRole("link", { name: new RegExp(taskName, "i") });
-
-  await link.click();
-  await page.waitForTimeout(4000);
-}
-
-module.exports = { openSetupAndMaintenance, openTaskBySearch };
+module.exports = { openSetupAndMaintenance };

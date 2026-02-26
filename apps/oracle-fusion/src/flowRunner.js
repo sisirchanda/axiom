@@ -1,44 +1,42 @@
 const fs = require("fs");
 
 function template(str, ctx) {
-  // Minimal templating: supports {{row.Field}} and {{var}}
   return String(str).replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
-    const p = expr.trim().split(".");
+    const parts = expr.trim().split(".");
     let cur = ctx;
-    for (const k of p) cur = cur?.[k];
+    for (const p of parts) cur = cur?.[p];
     return cur ?? "";
   });
 }
 
-async function runActions(actions, ctx, handlers) {
-  for (const step of actions) {
+function deepTemplate(obj, ctx) {
+  return JSON.parse(template(JSON.stringify(obj), ctx));
+}
+
+async function runSteps(steps, ctx, handlers) {
+  for (const step of steps || []) {
     if (step.action) {
       const fn = handlers[step.action];
       if (!fn) throw new Error(`Unknown action: ${step.action}`);
-
-      // Resolve params with templating
-      const params = step.params ? JSON.parse(template(JSON.stringify(step.params), ctx)) : {};
+      const params = step.params ? deepTemplate(step.params, ctx) : {};
+      ctx.logger.info(`Running action: ${step.action}`);
       await fn(ctx, params);
       continue;
     }
 
-    if (step.if) {
-      const [left, right] = step.if.eq;
-      const L = template(left, ctx);
-      const R = template(right, ctx);
-      if (L === R) await runActions(step.then || [], ctx, handlers);
-      else await runActions(step.else || [], ctx, handlers);
+    if (step.forEach) {
+      const list = ctx[step.forEach];
+      if (!Array.isArray(list)) throw new Error(`ctx.${step.forEach} is not an array`);
+      for (const row of list) await runSteps(step.do, { ...ctx, row }, handlers);
       continue;
     }
 
-    if (step.forEach) {
-      const listName = step.forEach; // e.g. "rows"
-      const list = ctx[listName];
-      if (!Array.isArray(list)) throw new Error(`forEach expects array ctx.${listName}`);
-
-      for (const row of list) {
-        await runActions(step.do || [], { ...ctx, row }, handlers);
-      }
+    if (step.if?.eq) {
+      const [l, r] = step.if.eq;
+      const L = template(l, ctx);
+      const R = template(r, ctx);
+      if (L === R) await runSteps(step.then, ctx, handlers);
+      else await runSteps(step.else, ctx, handlers);
       continue;
     }
 
@@ -47,15 +45,9 @@ async function runActions(actions, ctx, handlers) {
 }
 
 async function runFlowFromFile(flowPath, ctx, handlers) {
-  const raw = fs.readFileSync(flowPath, "utf-8");
-  const flow = JSON.parse(raw);
-
-  // 1) pre steps
-  await runActions(flow.pre || [], ctx, handlers);
-
-  // 2) main steps
-  await runActions(flow.steps || [], ctx, handlers);
-
+  const flow = JSON.parse(fs.readFileSync(flowPath, "utf8"));
+  await runSteps(flow.pre, ctx, handlers);
+  await runSteps(flow.steps, ctx, handlers);
   return flow;
 }
 
