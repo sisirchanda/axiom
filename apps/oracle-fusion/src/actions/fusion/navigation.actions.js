@@ -10,6 +10,9 @@ const URL = process.env.ERP_URL
 const USERNAME = process.env.ERP_USERNAME
 const PASSWORD = process.env.ERP_PASSWORD
 
+const AXIOM_OFFERING = process.env.AXIOM_OFFERING
+const AXIOM_FUNCTIONAL_AREA = process.env.AXIOM_FUNCTIONAL_AREA
+
 module.exports = {
   "fusion.login": async (ctx) => {
     //await login(ctx.page, ctx.logger, ctx.env);
@@ -22,7 +25,7 @@ module.exports = {
   },
 
   "fusion.openTask": async (ctx, { taskName }) => {
-    await openTask(ctx.page, ctx.logger, taskName);
+    await openTask(ctx.page, ctx.logger, AXIOM_OFFERING, AXIOM_FUNCTIONAL_AREA, taskName);
   },
 
   "fusion.loadExcelRows": async (ctx, { sheet, map, required }) => {

@@ -28,7 +28,7 @@ async function openSetupAndMaintenance(pageInstance, logger) {
         // 2. Poll for the menu item (Oracle menus can be slow to inject)
         // We try for up to 3 seconds
         for (let i = 0; i < 15; i++) {
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 2000));
             const setupLink = findSetupLink();
             if (setupLink) {
                 setupLink.click();
