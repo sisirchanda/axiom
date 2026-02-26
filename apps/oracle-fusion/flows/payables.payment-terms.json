@@ -1,0 +1,56 @@
+{
+  "id": "fusion.payables.paymentTerms.v1",
+  "erp": "oracle-fusion",
+  "module": "Payables",
+  "submodule": "Payment Terms",
+  "version": 1,
+  "pre": [
+    { "action": "fusion.login" },
+    { "action": "fusion.goToSetupAndMaintenance" },
+    { "action": "fusion.openTask", "params": { "taskName": "Manage Payment Terms" } },
+    {
+      "action": "fusion.loadExcelRows",
+      "params": {
+        "sheet": "PaymentTerms",
+        "map": {
+          "Action": "Action",
+          "TermName": "TermName",
+          "Description": "Description",
+          "DueDays": "DueDays"
+        },
+        "required": ["TermName"]
+      }
+    }
+  ],
+  "input": {
+    "type": "excel",
+    "sheet": "PaymentTerms",
+    "map": {
+      "Action": "Action",
+      "TermName": "TermName",
+      "Description": "Description",
+      "DueDays": "DueDays",
+      "DiscountPercent": "DiscountPercent",
+      "DiscountDays": "DiscountDays",
+      "EndDate": "EndDate",
+      "Enabled": "Enabled"
+    },
+    "required": ["TermName"]
+  },
+  "steps": [
+    {
+      "forEach": "rows",
+      "do": [
+        {
+          "if": { "eq": ["{{row.Action}}", "CREATE"] },
+          "then": [
+            { "action": "fusion.paymentTerms.create", "params": { "row": "{{row}}" } }
+          ],
+          "else": [
+            { "action": "core.log", "params": { "level": "warn", "message": "Skipping row (Action not supported): {{row.Action}}" } }
+          ]
+        }
+      ]
+    }
+  ]
+}
