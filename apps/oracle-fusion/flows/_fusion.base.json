@@ -1,0 +1,14 @@
+{
+  "id": "fusion.base",
+  "pre": [
+    { "action": "fusion.login" },
+    { "action": "fusion.openSetupAndMaintenance" },
+    {
+      "action": "fusion.openTask",
+      "params": {
+        "functionalArea": "{{flow.functionalArea}}",
+        "taskName": "{{flow.taskName}}"
+      }
+    }
+  ]
+}

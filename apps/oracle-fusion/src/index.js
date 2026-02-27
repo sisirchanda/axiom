@@ -15,12 +15,16 @@ const { buildHandlers } = require("./actionHandlers");
   console.log("AXIOM_SUBMODULE=", process.env.AXIOM_SUBMODULE);
 
   const flowPath = getFlowPath(moduleName, submoduleName);
-  if (!flowPath) throw new Error(`No flow registered for ${moduleName} / ${submoduleName}`);
+  if (!flowPath) {
+	  throw new Error(`No flow registered for ${moduleName} / ${submoduleName}`);
+  }
 
   const { browser, page } = await core.launchBrowser({ headless: false });
+  
 
   try {
-    const ctx = { logger, page, env: process.env, rows: [] };
+	const filePath = process.env.AXIOM_EXCEL_PATH || path.join(__dirname, "..", "testdata", "payables", "payment_terms.xlsx");
+    const ctx = { logger, page, env: process.env, rows: [], filePath };
     const handlers = buildHandlers();
 
     await runFlowFromFile(flowPath, ctx, handlers);

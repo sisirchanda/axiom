@@ -24,8 +24,9 @@ module.exports = {
     await openSetupAndMaintenance(ctx.page, ctx.logger);
   },
 
-  "fusion.openTask": async (ctx, { taskName }) => {
-    await openTask(ctx.page, ctx.logger, AXIOM_OFFERING, AXIOM_FUNCTIONAL_AREA, taskName);
+  "fusion.openTask": async (ctx, params) => {
+	const { functionalArea, taskName } = params;
+    await openTask(ctx.page, ctx.logger, functionalArea, taskName);
   },
 
   "fusion.loadExcelRows": async (ctx, { sheet, map, required }) => {

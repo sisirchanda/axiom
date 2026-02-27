@@ -1,7 +1,13 @@
 const path = require("path");
 
 const map = {
-  "payables::payment terms": path.join(__dirname, "..", "flows", "payables.payment-terms.json"),
+  "payables::payment terms": path.join(
+    __dirname,
+    "..",
+    "flows",
+    "payables",
+    "payables.payment-terms.json"
+  ),
 };
 
 function getFlowPath(moduleName, submoduleName) {

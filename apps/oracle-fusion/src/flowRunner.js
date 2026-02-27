@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 
 function template(str, ctx) {
   return String(str).replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
@@ -44,10 +45,23 @@ async function runSteps(steps, ctx, handlers) {
   }
 }
 
+// NEW: base flow path (common for all fusion tasks)
+const FUSION_BASE_FLOW_PATH = path.join(__dirname, "..", "flows", "_fusion.base.json");
+
 async function runFlowFromFile(flowPath, ctx, handlers) {
+  // 1) Load task flow
   const flow = JSON.parse(fs.readFileSync(flowPath, "utf8"));
-  await runSteps(flow.pre, ctx, handlers);
-  await runSteps(flow.steps, ctx, handlers);
+
+  // 2) Make it available to templating as {{flow.xxx}}
+  const ctxWithFlow = { ...ctx, flow };
+
+  // 3) Run common Fusion pre from JSON
+  const base = JSON.parse(fs.readFileSync(FUSION_BASE_FLOW_PATH, "utf8"));
+  await runSteps(base.pre, ctxWithFlow, handlers);
+
+  // 4) Run task-specific steps only
+  await runSteps(flow.steps, ctxWithFlow, handlers);
+
   return flow;
 }
 
