@@ -1,4 +1,12 @@
-async function openTask(page, logger, functionalArea, taskName) {
+async function openTask(ctx, taskName) {
+	
+	const { page, logger, env } = ctx;
+	
+	if (env.FLOW_TEST === 'Y') {
+		logger.info(`Testing only the flow: ${taskName}`);
+		return;
+	}
+	
     logger.info(`Opening Task: ${taskName}`);
 	await page.getByRole('link', { name: 'Tasks' }).click();
 	await page.waitForTimeout(1500);

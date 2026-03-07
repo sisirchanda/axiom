@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "payment-terms": {
+	  "fusionTask": "Manage Payment Terms",
+      "sheet": "PaymentTerms",
+	  "parser": "paymentTerms.parser.new",
+      "handler": "paymentTerms.handler"
+    }
+  }
+}

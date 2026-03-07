@@ -1,41 +1,72 @@
 require("dotenv").config();
 const core = require("../../../packages/core/src");
+const path = require("path");
 
-const { getFlowPath } = require("./flowRegistry");
-const { runFlowFromFile } = require("./flowRunner");
-const { buildHandlers } = require("./actionHandlers");
+const { resolveTasks } = require("./moduleResolver");
+
+const loginNav = require("./navigation/login.nav");
+const setupNav = require("./navigation/setupMaintenance.nav");
+const taskNav = require("./navigation/task.nav");
 
 (async () => {
+
   const logger = core.logger;
-
-  const moduleName = process.env.AXIOM_MODULE;
-  const submoduleName = process.env.AXIOM_SUBMODULE;
   
-  console.log("AXIOM_MODULE=", process.env.AXIOM_MODULE);
-  console.log("AXIOM_SUBMODULE=", process.env.AXIOM_SUBMODULE);
-
-  const flowPath = getFlowPath(moduleName, submoduleName);
-  if (!flowPath) {
-	  throw new Error(`No flow registered for ${moduleName} / ${submoduleName}`);
+  if (process.argv.length < 3) {
+	  throw new Error("Usage: node src/index.js <module> [excelFile]");
   }
+
+  const moduleName = process.argv[2];   // dynamic module
+  const inputFile = process.argv[3];    // optional excel
+
+  if (!moduleName) {
+    throw new Error("Usage: node src/index.js <module> [excelFile]");
+  }
+
+  const filePath =
+    inputFile ||
+    path.join(__dirname, "..", "testdata", moduleName, "payment_terms.xlsx");
+
+  logger.info(`Module: ${moduleName}`);
+  logger.info(`Excel: ${filePath}`);
 
   const { browser, page } = await core.launchBrowser({ headless: false });
-  
 
   try {
-	const filePath = process.env.AXIOM_EXCEL_PATH || path.join(__dirname, "..", "testdata", "payables", "payment_terms.xlsx");
-    const ctx = { logger, page, env: process.env, rows: [], filePath };
-    const handlers = buildHandlers();
 
-    await runFlowFromFile(flowPath, ctx, handlers);
+    const ctx = {
+      logger,
+      page,
+      env: process.env,
+      filePath
+    };
 
-    logger.info("Flow completed successfully.");
+    await loginNav.login(ctx);
+    await setupNav.openSetupAndMaintenance(ctx);
+
+    const tasks = resolveTasks(moduleName);
+
+    for (const task of tasks) {
+
+      logger.info(`Running task: ${task.taskKey}`);
+
+      await taskNav.openTask(ctx, task.fusionTask);
+
+      const handler = require(task.handlerPath);
+
+      await handler.run(ctx, task);
+
+    }
+
   } catch (e) {
-    logger.error("Flow failed", e);
-    await page.screenshot({ path: "99_error.png", fullPage: true }).catch(() => {});
-    process.exitCode = 1;
+
+    logger.error("Execution failed", e);
+
   } finally {
+
     await core.closeBrowser(browser);
     logger.info("Browser closed");
+
   }
+
 })();
